@@ -9,10 +9,15 @@ SAVE_DIR = "downloads"
 if not os.path.exists(SAVE_DIR):
     os.makedirs(SAVE_DIR)
 
-# --- Page Setup ---
+# --- 1. Page Setup ---
 st.set_page_config(page_title="Tranquility Universal Pro", page_icon="💫", layout="wide")
 
-# --- UI Styling (Fixed for Cloud View) ---
+# --- 2. CRITICAL FIX: Initialize Session State Immediately ---
+# This prevents the 'history' KeyError on the hosted server
+if 'history' not in st.session_state:
+    st.session_state['history'] = []
+
+# --- 3. UI Styling ---
 BACKGROUND_IMAGE = "https://images.unsplash.com/photo-1596203117563-71a2510b655f?q=80&w=1920&auto=format&fit=crop"
 
 st.markdown(f"""
@@ -22,7 +27,6 @@ st.markdown(f"""
         background-size: cover; background-attachment: fixed;
     }}
     
-    /* FIX: Added top padding so the Cloud menu doesn't cover the marquee */
     .block-container {{ 
         max-width: 1100px !important; 
         margin: auto !important; 
@@ -89,8 +93,6 @@ st.markdown("""
 st.markdown("<h1 style='text-align:center;'>💫 Tranquility Universal Pro</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; color:#94a3b8;'>Multi-Platform Extraction Engine • Sani Suleiman Edition</p>", unsafe_allow_html=True)
 
-if 'history' not in st.session_state: st.session_state.history = []
-
 col1, col2 = st.columns([3, 2], gap="large")
 
 with col1:
@@ -100,7 +102,7 @@ with col1:
         st.success("Status: Online 📡")
         st.info("User: Tranquility 💫")
         if st.button("🗑️ Clear Logs"):
-            st.session_state.history = []
+            st.session_state['history'] = []
             st.rerun()
 
     st.markdown("### 📥 Media Source")
@@ -169,7 +171,9 @@ with col1:
                     file_path = ydl.prepare_filename(data)
                     if mode == "Audio (MP3)": file_path = os.path.splitext(file_path)[0] + ".mp3"
                 
-                st.session_state.history.append({"t": datetime.datetime.now().strftime("%H:%M"), "title": data.get('title', 'Media File')})
+                # Update history session state
+                st.session_state['history'].append({"t": datetime.datetime.now().strftime("%H:%M"), "title": data.get('title', 'Media File')})
+                
                 st.balloons()
                 st.success("Extraction Successful!")
                 with open(file_path, "rb") as f:
@@ -181,8 +185,9 @@ with col1:
 
 with col2:
     st.markdown("### 🕒 Session Activity")
-    if st.session_state.history:
-        for item in reversed(st.session_state.history):
+    # SAFE CHECK: Always check if the key exists before reading it
+    if 'history' in st.session_state and st.session_state['history']:
+        for item in reversed(st.session_state['history']):
             st.code(f"[{item['t']}] {item['title'][:35]}...")
     else:
         st.info("Waiting for Media Source...")
