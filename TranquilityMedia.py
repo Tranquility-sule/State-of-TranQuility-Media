@@ -3,7 +3,6 @@ import yt_dlp
 import os
 import datetime
 import re
-from streamlit_autorefresh import st_autorefresh
 
 # --- Configuration ---
 SAVE_DIR = "downloads"
@@ -12,11 +11,6 @@ if not os.path.exists(SAVE_DIR):
 
 # --- Page Setup ---
 st.set_page_config(page_title="Tranquility Universal Pro", page_icon="💫", layout="wide")
-
-# --- STABILIZED REFRESH ---
-# We use 5 seconds here. Fast enough to see the time, 
-# slow enough not to crash the download engine.
-st_autorefresh(interval=5000, key="datetimeticker") 
 
 # --- UI Styling ---
 BACKGROUND_IMAGE = "https://images.unsplash.com/photo-1596203117563-71a2510b655f?q=80&w=1920&auto=format&fit=crop"
@@ -47,11 +41,6 @@ st.markdown(f"""
         width: 100%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); 
         color: white !important; padding: 1.1rem; font-weight: 800; border-radius: 12px; border: none;
     }}
-    
-    .clock-box {{
-        background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981;
-        border-radius: 10px; padding: 15px; text-align: center; margin-bottom: 20px;
-    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -74,16 +63,9 @@ col1, col2 = st.columns([3, 2], gap="large")
 
 with col1:
     with st.sidebar:
-        # Simple Clock that works on ALL versions
-        now = datetime.datetime.now()
-        st.markdown(f"""
-            <div class="clock-box">
-                <h2 style="margin:0; color:#10b981;">{now.strftime("%H:%M:%S")}</h2>
-                <p style="margin:0; font-size:0.8rem; color:#a7f3d0;">{now.strftime("%A, %d %B %Y")}</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        st.success("Universal Mode: Active")
+        st.image("https://cdn-icons-png.flaticon.com/512/3039/3039387.png", width=80)
+        st.markdown("## Control Center")
+        st.success("Status: Online 📡")
         st.info("User: Tranquility 💫")
         if st.button("🗑️ Clear Logs"):
             st.session_state.history = []
@@ -98,8 +80,8 @@ with col1:
                 info = ydl.extract_info(url, download=False)
                 if 'thumbnail' in info:
                     st.image(info['thumbnail'], use_column_width=True)
-                st.caption(f"📝 Title: {info.get('title', 'Unknown Media')}")
-        except: st.warning("🔍 Syncing with source...")
+                st.caption(f"📝 Title: {info.get('title', 'Media File')}")
+        except: st.write("🔍 Syncing with source...")
 
     st.markdown("#### ✂️ Precision Trim (Optional)")
     t_col1, t_col2 = st.columns(2)
@@ -116,7 +98,6 @@ with col1:
 
     if st.button("🚀 START EXTRACTION"):
         if url:
-            # Persistent Status Area
             status_text = st.empty()
             progress_bar = st.progress(0)
             
