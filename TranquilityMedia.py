@@ -12,8 +12,7 @@ if not os.path.exists(SAVE_DIR):
 # --- 1. Page Setup ---
 st.set_page_config(page_title="Tranquility Universal Pro", page_icon="💫", layout="wide")
 
-# --- 2. CRITICAL FIX: Initialize Session State Immediately ---
-# This prevents the 'history' KeyError on the hosted server
+# --- 2. Initialize Session State ---
 if 'history' not in st.session_state:
     st.session_state['history'] = []
 
@@ -26,56 +25,30 @@ st.markdown(f"""
         background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(15, 23, 42, 0.95)), url("{BACKGROUND_IMAGE}");
         background-size: cover; background-attachment: fixed;
     }}
-    
     .block-container {{ 
         max-width: 1100px !important; 
         margin: auto !important; 
         padding-top: 3.5rem !important; 
     }}
-    
     .marquee-container {{
-        width: 100%; 
-        overflow: hidden; 
-        background: rgba(16, 185, 129, 0.15);
-        border-bottom: 2px solid #10b981; 
-        padding: 15px 0; 
-        margin-bottom: 30px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-        border-radius: 8px;
+        width: 100%; overflow: hidden; background: rgba(16, 185, 129, 0.15);
+        border-bottom: 2px solid #10b981; padding: 15px 0; margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); border-radius: 8px;
     }}
-    
     .marquee-text {{
-        display: inline-block; 
-        white-space: nowrap; 
-        animation: scroll-left 25s linear infinite;
-        color: #10b981; 
-        font-weight: 900; 
-        font-size: 1.6rem; 
-        text-transform: uppercase;
-        letter-spacing: 3px; 
-        text-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+        display: inline-block; white-space: nowrap; animation: scroll-left 25s linear infinite;
+        color: #10b981; font-weight: 900; font-size: 1.6rem; text-transform: uppercase;
+        letter-spacing: 3px; text-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
     }}
-    
     @keyframes scroll-left {{ 0% {{ transform: translateX(100%); }} 100% {{ transform: translateX(-100%); }} }}
-
     h1, h2, h3, label, p {{ font-family: 'Inter', sans-serif !important; color: #f1f5f9 !important; }}
-    
     div.stBlock {{ 
-        background: rgba(30, 41, 59, 0.6); 
-        padding: 2.5rem; 
-        border-radius: 20px; 
-        border: 1px solid rgba(16, 185, 129, 0.3); 
-        backdrop-filter: blur(12px); 
+        background: rgba(30, 41, 59, 0.6); padding: 2.5rem; border-radius: 20px; 
+        border: 1px solid rgba(16, 185, 129, 0.3); backdrop-filter: blur(12px); 
     }}
-    
     .stButton>button {{ 
-        width: 100%; 
-        background: linear-gradient(90deg, #10b981 0%, #059669 100%); 
-        color: white !important; 
-        padding: 1.1rem; 
-        font-weight: 800; 
-        border-radius: 12px; 
-        border: none;
+        width: 100%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); 
+        color: white !important; padding: 1.1rem; font-weight: 800; border-radius: 12px; border: none;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -159,7 +132,7 @@ with col1:
                     'external_downloader_args': {'ffmpeg_i': ffmpeg_args} if ffmpeg_args else {},
                     'noplaylist': True,
                     'quiet': True,
-                    'ignoreerrors': True
+                    'ignoreerrors': False,
                 }
                 
                 if mode == "Audio (MP3)":
@@ -171,21 +144,24 @@ with col1:
                     file_path = ydl.prepare_filename(data)
                     if mode == "Audio (MP3)": file_path = os.path.splitext(file_path)[0] + ".mp3"
                 
-                # Update history session state
                 st.session_state['history'].append({"t": datetime.datetime.now().strftime("%H:%M"), "title": data.get('title', 'Media File')})
-                
                 st.balloons()
                 st.success("Extraction Successful!")
                 with open(file_path, "rb") as f:
                     st.download_button("💾 DOWNLOAD FILE", f, file_name=os.path.basename(file_path))
             except Exception as e:
-                st.error(f"Engine Error: The link might be private or invalid.")
+                error_msg = str(e)
+                if "Sign in" in error_msg:
+                    st.error("🔒 Restricted: This video requires login. Try a public link.")
+                elif "ffmpeg" in error_msg.lower():
+                    st.error("⚙️ Engine Error: FFmpeg not detected. Please verify your 'packages.txt' file.")
+                else:
+                    st.error(f"Engine Detail: {error_msg[:200]}")
         else:
             st.warning("Please provide a link.")
 
 with col2:
     st.markdown("### 🕒 Session Activity")
-    # SAFE CHECK: Always check if the key exists before reading it
     if 'history' in st.session_state and st.session_state['history']:
         for item in reversed(st.session_state['history']):
             st.code(f"[{item['t']}] {item['title'][:35]}...")
