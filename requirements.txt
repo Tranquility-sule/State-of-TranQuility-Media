@@ -1,3 +1,4 @@
 streamlit
 yt-dlp
 streamlit-autorefresh
+imageio-ffmpeg
