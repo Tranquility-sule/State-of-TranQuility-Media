@@ -3,14 +3,14 @@ import yt_dlp
 import os
 import datetime
 import re
-import imageio_ffmpeg as ff  # The "Portable Engine"
+import imageio_ffmpeg as ff
 
 # --- Configuration ---
 SAVE_DIR = "downloads"
 if not os.path.exists(SAVE_DIR):
     os.makedirs(SAVE_DIR)
 
-# Dynamically find the portable engine path
+# Dynamically find the portable FFmpeg engine
 FFMPEG_EXE = ff.get_ffmpeg_exe()
 
 # --- 1. Page Setup ---
@@ -128,10 +128,11 @@ with col1:
                     'format': fmt,
                     'outtmpl': f'{SAVE_DIR}/%(title)s.%(ext)s',
                     'progress_hooks': [progress_hook],
-                    'ffmpeg_location': FFMPEG_EXE, # Bypassing system FFmpeg
+                    'ffmpeg_location': FFMPEG_EXE,
                     'noplaylist': True,
                     'quiet': True,
                     'ignoreerrors': False,
+                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 }
                 
                 if mode == "Audio (MP3)":
@@ -149,7 +150,7 @@ with col1:
                 with open(file_path, "rb") as f:
                     st.download_button("💾 DOWNLOAD FILE", f, file_name=os.path.basename(file_path))
             except Exception as e:
-                st.error(f"Engine Error: {str(e)[:250]}")
+                st.error(f"Engine Detail: {str(e)[:250]}")
         else:
             st.warning("Please provide a link.")
 
