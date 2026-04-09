@@ -3,11 +3,15 @@ import yt_dlp
 import os
 import datetime
 import re
+import imageio_ffmpeg as ff  # The "Portable Engine"
 
 # --- Configuration ---
 SAVE_DIR = "downloads"
 if not os.path.exists(SAVE_DIR):
     os.makedirs(SAVE_DIR)
+
+# Dynamically find the portable engine path
+FFMPEG_EXE = ff.get_ffmpeg_exe()
 
 # --- 1. Page Setup ---
 st.set_page_config(page_title="Tranquility Universal Pro", page_icon="💫", layout="wide")
@@ -25,11 +29,7 @@ st.markdown(f"""
         background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(15, 23, 42, 0.95)), url("{BACKGROUND_IMAGE}");
         background-size: cover; background-attachment: fixed;
     }}
-    .block-container {{ 
-        max-width: 1100px !important; 
-        margin: auto !important; 
-        padding-top: 3.5rem !important; 
-    }}
+    .block-container {{ max-width: 1100px !important; margin: auto !important; padding-top: 3.5rem !important; }}
     .marquee-container {{
         width: 100%; overflow: hidden; background: rgba(16, 185, 129, 0.15);
         border-bottom: 2px solid #10b981; padding: 15px 0; margin-bottom: 30px;
@@ -128,8 +128,7 @@ with col1:
                     'format': fmt,
                     'outtmpl': f'{SAVE_DIR}/%(title)s.%(ext)s',
                     'progress_hooks': [progress_hook],
-                    'external_downloader': 'ffmpeg',
-                    'external_downloader_args': {'ffmpeg_i': ffmpeg_args} if ffmpeg_args else {},
+                    'ffmpeg_location': FFMPEG_EXE, # Bypassing system FFmpeg
                     'noplaylist': True,
                     'quiet': True,
                     'ignoreerrors': False,
@@ -150,13 +149,7 @@ with col1:
                 with open(file_path, "rb") as f:
                     st.download_button("💾 DOWNLOAD FILE", f, file_name=os.path.basename(file_path))
             except Exception as e:
-                error_msg = str(e)
-                if "Sign in" in error_msg:
-                    st.error("🔒 Restricted: This video requires login. Try a public link.")
-                elif "ffmpeg" in error_msg.lower():
-                    st.error("⚙️ Engine Error: FFmpeg not detected. Please verify your 'packages.txt' file.")
-                else:
-                    st.error(f"Engine Detail: {error_msg[:200]}")
+                st.error(f"Engine Error: {str(e)[:250]}")
         else:
             st.warning("Please provide a link.")
 
