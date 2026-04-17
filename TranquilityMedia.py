@@ -10,8 +10,8 @@ SAVE_DIR = "downloads"
 if not os.path.exists(SAVE_DIR):
     os.makedirs(SAVE_DIR)
 
-# Dynamically find the portable FFmpeg engine
-FFMPEG_EXE = ff.get_ffmpeg_exe()
+# Dynamically locate the portable FFmpeg engine
+FFMPEG_PATH = ff.get_ffmpeg_exe()
 
 # --- 1. Page Setup ---
 st.set_page_config(page_title="Tranquility Universal Pro", page_icon="💫", layout="wide")
@@ -57,7 +57,7 @@ st.markdown(f"""
 st.markdown("""
     <div class="marquee-container">
         <div class="marquee-text">
-            🚀 UNIVERSAL ACCESS ENABLED: TIKTOK, INSTAGRAM, FACEBOOK, AND YOUTUBE! ✨ VERIFIED AS THE BEST ALL-IN-ONE DOWNLOADER BY SANI SULEIMAN ✨
+            🚀 UNIVERSAL ACCESS ENABLED: TIKTOK, INSTAGRAM, FACEBOOK, AND YOUTUBE! ✨ VERIFIED BY SANI SULEIMAN ✨
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -83,7 +83,13 @@ with col1:
     
     if url:
         try:
-            with yt_dlp.YoutubeDL({'quiet': True, 'noplaylist': True}) as ydl:
+            # We add headers even for the preview extraction
+            preview_opts = {
+                'quiet': True, 
+                'noplaylist': True,
+                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            with yt_dlp.YoutubeDL(preview_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
                 if 'thumbnail' in info:
                     st.image(info['thumbnail'], use_column_width=True)
@@ -128,21 +134,29 @@ with col1:
                     'format': fmt,
                     'outtmpl': f'{SAVE_DIR}/%(title)s.%(ext)s',
                     'progress_hooks': [progress_hook],
-                    'ffmpeg_location': FFMPEG_EXE,
+                    'ffmpeg_location': FFMPEG_PATH,
                     'noplaylist': True,
                     'quiet': True,
                     'ignoreerrors': False,
-                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    # --- FIX FOR 403 FORBIDDEN ---
+                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'referer': 'https://www.google.com/',
+                    'nocheckcertificate': True,
                 }
                 
                 if mode == "Audio (MP3)":
                     bitrate = quality_option.split('k')[0]
-                    ydl_opts['postprocessors'] = [{'key': 'FFmpegExtractAudio','preferredcodec': 'mp3','preferredquality': bitrate}]
+                    ydl_opts['postprocessors'] = [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                        'preferredquality': bitrate
+                    }]
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     data = ydl.extract_info(url, download=True)
                     file_path = ydl.prepare_filename(data)
-                    if mode == "Audio (MP3)": file_path = os.path.splitext(file_path)[0] + ".mp3"
+                    if mode == "Audio (MP3)":
+                        file_path = os.path.splitext(file_path)[0] + ".mp3"
                 
                 st.session_state['history'].append({"t": datetime.datetime.now().strftime("%H:%M"), "title": data.get('title', 'Media File')})
                 st.balloons()
